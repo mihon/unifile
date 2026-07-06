@@ -1,4 +1,7 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.vanniktech.maven.publish'
+
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
 
 android {
     namespace "com.hippo.unifile"
@@ -12,4 +15,33 @@ android {
 
 dependencies {
     compileOnly 'androidx.annotation:annotation:1.10.0'
+}
+
+mavenPublishing {
+    coordinates("com.github.mihon", "unifile", "1.0.0-SNAPSHOT")
+
+    pom {
+        name.set("UniFile")
+        url.set("https://github.com/mihon/unifile")
+
+        licenses {
+            license {
+                name.set("Apache License 2.0")
+                url.set("https://www.apache.org/licenses/LICENSE-2.0")
+                distribution.set("repo")
+            }
+        }
+
+        organization {
+            name.set("Mihon Open Source Project")
+            url.set("https://github.com/mihon")
+        }
+
+        scm {
+            connection.set("scm:git:git://github.com/mihon/unifile.git")
+            url.set("https://github.com/mihon/unifile")
+        }
+    }
+
+    configure(new AndroidSingleVariantLibrary())
 }

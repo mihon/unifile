@@ -228,45 +228,40 @@ class TreeDocumentFile extends UniFile {
             return null;
         }
 
-        // This implementation assumes that document IDs are formed
-        // based on filenames, which is a reasonable assumption for
-        // most document providers, but is not guaranteed by the spec.
+        // For Android storage providers, we assume document IDs are formed
+        // based on filenames, allowing for a fast existence check.
+        // For other providers, we fall back to the slower but more reliable
+        // method of listing all files, as document ID structure is not guaranteed.
         //
-        // Without making the assumption that document IDs are
-        // arranged in a reasonable way, it is impossible to check for
-        // file existence in a way that is not extremely slow.
-        //
-        // If it turns out that some popular devices use a document
-        // provider for which this is a bad assumption, then we should
-        // revisit this implementation and perhaps special-case a
-        // fallback to the slow way for those providers. It's possible
-        // to check the name of the document provider by using similar
-        // code to DocumentsContractApi19.isDocumentsProvider to
-        // identify which provider is being used, and then print the
-        // name of the class.
-        //
-        // Note on case sensitivity: this method should always behave
-        // correctly with respect to the case sensitivity of the
-        // filesystem. That is, on a case-sensitive filesystem it will
-        // do a case-sensitive existence check, while on a
-        // case-insensitive filesystem (case-preserving or not) it
-        // will implicitly do a case-insensitive existence check.
-        // Previous versions of this method took an explicit parameter
-        // for whether the check should be case sensitive or not, but
-        // that should no longer be necessary with the current
-        // implementation.
+        // Note on case sensitivity:
+        // - Device Storage: Case sensitivity is determined by the document provider.
+        //   For most Android storage this is typically case-insensitive.
+        // - Other Providers: We perform an explicit case-insensitive
+        //   search while looping through the directory. This ensures broad
+        //   compatibility with providers that might have different or opaque
+        //   naming schemes.
+        if (DocumentsContractApi19.isDeviceStorage(mUri.getAuthority())) {
+            String documentId = DocumentsContract.getDocumentId(mUri);
+            documentId += "/" + displayName;
 
-        String documentId = DocumentsContract.getDocumentId(mUri);
-        documentId += "/" + displayName;
+            Uri documentUri = DocumentsContract.buildDocumentUriUsingTree(mUri, documentId);
+            UniFile child = new TreeDocumentFile(this, mContext, documentUri, displayName);
 
-        Uri documentUri = DocumentsContract.buildDocumentUriUsingTree(mUri, documentId);
-        UniFile child = new TreeDocumentFile(this, mContext, documentUri, displayName);
-
-        if (child.exists()) {
-            return child;
-        } else {
-            return null;
+            if (child.exists()) {
+                return child;
+            } else {
+                return null;
+            }
         }
+
+        final NamedUri[] result = DocumentsContractApi21.listFilesNamed(mContext, mUri);
+        for (NamedUri uri : result) {
+            if (Utils.equals(displayName, uri.name, true)) {
+                return new TreeDocumentFile(this, mContext, uri.uri, displayName);
+            }
+        }
+
+        return null;
     }
 
     @Override

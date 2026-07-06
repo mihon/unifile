@@ -52,6 +52,12 @@ final class DocumentsContractApi19 {
     private static final String PATH_DOCUMENT = "document";
     private static final String PATH_TREE = "tree";
 
+    public static boolean isDeviceStorage(@Nullable String authority) {
+        return authority != null && (authority.equals(AUTHORITY_DOCUMENT_EXTERNAL_STORAGE) ||
+                authority.equals(AUTHORITY_DOCUMENT_DOWNLOAD) ||
+                authority.equals(AUTHORITY_DOCUMENT_MEDIA));
+    }
+
     public static boolean isContentUri(@Nullable Uri uri) {
         return uri != null && ContentResolver.SCHEME_CONTENT.equals(uri.getScheme());
     }
